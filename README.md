@@ -2,7 +2,7 @@
 
 ## Building the machine
 ```bash
-sudo docker build -t claroline-connect .
+docker build -t claroline-connect .
 ```
 ## Running the machine
 ```bash
@@ -16,5 +16,5 @@ http://localhost:99/
 
 ## Removing the machine and all its contents
 ```bash
-sudo docker rm -f claroline-connect
+docker rm -f claroline-connect
 ```
