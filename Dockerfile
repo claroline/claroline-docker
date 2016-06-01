@@ -51,20 +51,24 @@ RUN rm claroline-16.05.tar.gz
 RUN mv claroline-16.05 claroline
 
 COPY files/claroline/parameters.yml /var/www/html/claroline/app/config/
+COPY files/apache2/claroline.conf /etc/apache2/sites-available/
 
 WORKDIR /var/www/html/claroline
 RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
 RUN php composer-setup.php
 RUN php -r "unlink('composer-setup.php');"
 RUN mv composer.phar /usr/local/bin/composer
-RUN /bin/bash -c "/usr/bin/mysqld_safe &" && composer fast-install
 RUN chmod -R 777 /var/www/html/claroline/app/cache /var/www/html/claroline/app/logs /var/www/html/claroline/app/config /var/www/html/claroline/app/sessions /var/www/html/claroline/files /var/www/html/claroline/web/uploads
-
-RUN /bin/bash -c "/usr/bin/mysqld_safe &" && \
-  sleep 20 && \
-  mysql --user=root --password=root -v -e "set global sql_mode=''" && \
-  composer fast-install && \
-  php app/console claroline:user:create -a John Doe admin pass admin@test.com
-
-COPY files/apache2/claroline.conf /etc/apache2/sites-available/
+RUN /bin/bash -c "/usr/bin/mysqld_safe &" && composer fast-install && php app/console claroline:user:create -a John Doe admin pass admin@test.com && mysql --user=root --password=root -v -e "set global sql_mode=''"
 RUN a2dissite 000-default && a2ensite claroline.conf
+
+# Install supervisor to allow starting mutliple processes
+RUN        mkdir -p /var/log/supervisord && \
+           mkdir -p /etc/supervisor/conf.d
+
+# Add supervisor configuration
+ADD        files/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+EXPOSE 80
+
+CMD ["/usr/bin/supervisord"]
