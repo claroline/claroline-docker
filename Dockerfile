@@ -59,7 +59,7 @@ RUN php composer-setup.php
 RUN php -r "unlink('composer-setup.php');"
 RUN mv composer.phar /usr/local/bin/composer
 RUN chmod -R 777 /var/www/html/claroline/app/cache /var/www/html/claroline/app/logs /var/www/html/claroline/app/config /var/www/html/claroline/app/sessions /var/www/html/claroline/files /var/www/html/claroline/web/uploads
-RUN /bin/bash -c "/usr/bin/mysqld_safe &" && composer fast-install && php app/console claroline:user:create -a John Doe admin pass admin@test.com && mysql --user=root --password=root -v -e "set global sql_mode=''"
+RUN /bin/bash -c "/usr/bin/mysqld_safe &" && composer fast-install && php app/console claroline:user:create -a John Doe admin pass admin@test.com && php app/console cache:warmup
 RUN a2dissite 000-default && a2ensite claroline.conf
 
 # Install supervisor to allow starting mutliple processes
