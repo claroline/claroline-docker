@@ -32,6 +32,7 @@ RUN apt-get update && apt-get install -y \
   php-mysql \
   php-curl \
   php-intl \
+  php-gd \
   npm \
   apache2-utils \
   php-mbstring \
@@ -39,16 +40,14 @@ RUN apt-get update && apt-get install -y \
 
 RUN npm cache clean -f \
   && npm install -g n \
-  && n latest
+  && n 5.11.1
 
 RUN a2enmod rewrite
 
 WORKDIR /var/www/html
 RUN rm index.html
-RUN wget http://packages.claroline.net/releases/16.05/claroline-16.05.tar.gz
-RUN tar -xzf claroline-16.05.tar.gz
-RUN rm claroline-16.05.tar.gz
-RUN mv claroline-16.05 claroline
+
+RUN git clone http://github.com/claroline/Claroline claroline
 
 COPY files/claroline/parameters.yml /var/www/html/claroline/app/config/
 COPY files/apache2/claroline.conf /etc/apache2/sites-available/
@@ -58,8 +57,12 @@ RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
 RUN php composer-setup.php
 RUN php -r "unlink('composer-setup.php');"
 RUN mv composer.phar /usr/local/bin/composer
+# This needs to be a tag, once the repo is tagged
+# RUN git checkout 7.x
+RUN /bin/bash -c "/usr/bin/mysqld_safe &" && sleep 5 && echo "create database claroline" | mysql -u root -proot
+RUN /bin/bash -c "/usr/bin/mysqld_safe &" && sleep 5 && composer sync
+RUN /bin/bash -c "/usr/bin/mysqld_safe &" && sleep 5 && php app/console claroline:user:create -a John Doe admin pass admin@test.com
 RUN chmod -R 777 /var/www/html/claroline/app/cache /var/www/html/claroline/app/logs /var/www/html/claroline/app/config /var/www/html/claroline/app/sessions /var/www/html/claroline/files /var/www/html/claroline/web/uploads
-RUN /bin/bash -c "/usr/bin/mysqld_safe &" && composer fast-install && php app/console claroline:user:create -a John Doe admin pass admin@test.com && php app/console cache:warmup
 RUN a2dissite 000-default && a2ensite claroline.conf
 
 # Install supervisor to allow starting mutliple processes
