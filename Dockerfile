@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y \
   apache2 \
   unzip \
   zip \
+  wkhtmltopdf \
   xz-utils \
   php-zip \
   mysql-client \
@@ -26,7 +27,6 @@ RUN apt-get update && apt-get install -y \
   php \
   libapache2-mod-php \
   libav-tools \
-  wkhtmltopdf \
   php-xml \
   php-mcrypt \
   php-mysql \
@@ -61,7 +61,6 @@ RUN mv composer.phar /usr/local/bin/composer
 # RUN git checkout 7.x
 RUN /bin/bash -c "/usr/bin/mysqld_safe &" && sleep 5 && echo "create database claroline" | mysql -u root -proot
 RUN /bin/bash -c "/usr/bin/mysqld_safe &" && sleep 5 && composer sync
-RUN /bin/bash -c "/usr/bin/mysqld_safe &" && sleep 5 && php app/console claroline:user:create -a John Doe admin pass admin@test.com
 RUN chmod -R 777 /var/www/html/claroline/app/cache /var/www/html/claroline/app/logs /var/www/html/claroline/app/config /var/www/html/claroline/app/sessions /var/www/html/claroline/files /var/www/html/claroline/web/uploads
 RUN a2dissite 000-default && a2ensite claroline.conf
 
@@ -71,6 +70,16 @@ RUN        mkdir -p /var/log/supervisord && \
 
 # Add supervisor configuration
 ADD        files/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+RUN wget http://download.gna.org/wkhtmltopdf/0.12/0.12.3/wkhtmltox-0.12.3_linux-generic-amd64.tar.xz
+RUN tar -xf wkhtmltox-0.12.3_linux-generic-amd64.tar.xz
+
+RUN mv wkhtmltox/bin/wkhtmltopdf /usr/bin/wkhtmltopdf.sh
+RUN mv wkhtmltox/bin/wkhtmltoimage /usr/bin/wkhtmltoimage.sh
+RUN rm -r wkhtmltox
+
+COPY files/bootstrap.sh /usr/local/bin/bootstrap.sh
+RUN chmod +x /usr/local/bin/bootstrap.sh
 
 EXPOSE 80
 
