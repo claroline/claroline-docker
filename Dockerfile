@@ -64,6 +64,10 @@ RUN /bin/bash -c "/usr/bin/mysqld_safe &" && sleep 5 && composer sync
 RUN chmod -R 777 /var/www/html/claroline/app/cache /var/www/html/claroline/app/logs /var/www/html/claroline/app/config /var/www/html/claroline/app/sessions /var/www/html/claroline/files /var/www/html/claroline/web/uploads
 RUN a2dissite 000-default && a2ensite claroline.conf
 
+#increase de file upload limite to 20M
+RUN sed -i -- 's/upload_max_filesize = 2M/upload_max_filesize = 20M/g' /etc/php/7.0/apache2/php.ini
+RUN sed -i -- 's/post_max_size = 8M/post_max_size = 20M/g' /etc/php/7.0/apache2/php.ini
+
 # Install supervisor to allow starting mutliple processes
 RUN        mkdir -p /var/log/supervisord && \
            mkdir -p /etc/supervisor/conf.d
@@ -77,10 +81,6 @@ RUN tar -xf wkhtmltox-0.12.3_linux-generic-amd64.tar.xz
 RUN mv wkhtmltox/bin/wkhtmltopdf /usr/bin/wkhtmltopdf.sh
 RUN mv wkhtmltox/bin/wkhtmltoimage /usr/bin/wkhtmltoimage.sh
 RUN rm -r wkhtmltox
-
-#increase de file upload limite to 20M
-RUN sed -i -- 's/upload_max_filesize = 2M/upload_max_filesize = 20M/g' /etc/php/7.0/apache2/php.ini
-RUN sed -i -- 's/post_max_size = 8M/post_max_size = 20M/g' /etc/php/7.0/apache2/php.ini
 
 COPY files/bootstrap.sh /usr/local/bin/bootstrap.sh
 RUN chmod +x /usr/local/bin/bootstrap.sh
