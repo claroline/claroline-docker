@@ -78,6 +78,10 @@ RUN mv wkhtmltox/bin/wkhtmltopdf /usr/bin/wkhtmltopdf.sh
 RUN mv wkhtmltox/bin/wkhtmltoimage /usr/bin/wkhtmltoimage.sh
 RUN rm -r wkhtmltox
 
+#increase de file upload limite to 20M
+RUN sed -i -- 's/upload_max_filesize = 2M/upload_max_filesize = 20M/g' /etc/php/7.0/apache2/php.ini
+RUN sed -i -- 's/post_max_size = 8M/post_max_size = 20M/g' /etc/php/7.0/apache2/php.ini
+
 COPY files/bootstrap.sh /usr/local/bin/bootstrap.sh
 RUN chmod +x /usr/local/bin/bootstrap.sh
 
