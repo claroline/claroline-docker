@@ -1,79 +1,44 @@
-FROM ubuntu:16.04
+FROM php:7.0.7-apache
 
 MAINTAINER Donovan Tengblad
 
-# Install packages
-ENV DEBIAN_FRONTEND noninteractive
-
-RUN echo "mysql-server-5.6 mysql-server/root_password password root" | debconf-set-selections
-RUN echo "mysql-server-5.6 mysql-server/root_password_again password root" | debconf-set-selections
+RUN a2enmod rewrite expires ssl headers
 
 RUN apt-get update && apt-get install -y \
-  supervisor \
-  vim \
   git \
+  mysql-client \
   wget \
-  curl \
-  apache2 \
   unzip \
   zip \
+  libxml2-dev \
+  libmcrypt-dev \
+  libcurl4-gnutls-dev \
   wkhtmltopdf \
   xz-utils \
-  php-zip \
-  mysql-client \
-  mysql-server \
   xfonts-75dpi \
   libav-tools \
-  php \
-  libapache2-mod-php \
-  libav-tools \
-  php-xml \
-  php-mcrypt \
-  php-mysql \
-  php-curl \
-  php-intl \
-  php-gd \
+  libldap2-dev \
+  libpng12-dev \
+  libjpeg-dev \
+  zlib1g-dev \
+  libicu-dev \
+  g++ \
+  ssl-cert \
+  curl \
   npm \
-  apache2-utils \
-  php-mbstring \
-  php-gettext
+  && rm -rf /var/lib/apt/lists/*
+
+RUN docker-php-ext-install -j$(nproc) xml mcrypt mysqli curl zip mbstring gettext pdo_mysql gd
+RUN docker-php-ext-configure intl
+RUN docker-php-ext-install intl
+RUN docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ && docker-php-ext-install ldap
 
 RUN npm cache clean -f \
-  && npm install -g n \
-  && n 5.11.1
+    && npm install -g n \
+    && n 5.11.1
 
-RUN a2enmod rewrite
-
-WORKDIR /var/www/html
-RUN rm index.html
-
-RUN git clone http://github.com/claroline/Claroline claroline
-
-COPY files/claroline/parameters.yml /var/www/html/claroline/app/config/
-COPY files/apache2/claroline.conf /etc/apache2/sites-available/
-
-WORKDIR /var/www/html/claroline
-RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-RUN php composer-setup.php
-RUN php -r "unlink('composer-setup.php');"
+RUN curl -sS https://getcomposer.org/installer | php
 RUN mv composer.phar /usr/local/bin/composer
-# This needs to be a tag, once the repo is tagged
-# RUN git checkout 7.x
-RUN /bin/bash -c "/usr/bin/mysqld_safe &" && sleep 5 && echo "create database claroline" | mysql -u root -proot
-RUN /bin/bash -c "/usr/bin/mysqld_safe &" && sleep 5 && composer sync
-RUN chmod -R 777 /var/www/html/claroline/app/cache /var/www/html/claroline/app/logs /var/www/html/claroline/app/config /var/www/html/claroline/app/sessions /var/www/html/claroline/files /var/www/html/claroline/web/uploads
-RUN a2dissite 000-default && a2ensite claroline.conf
-
-#increase de file upload limite to 20M
-RUN sed -i -- 's/upload_max_filesize = 2M/upload_max_filesize = 20M/g' /etc/php/7.0/apache2/php.ini
-RUN sed -i -- 's/post_max_size = 8M/post_max_size = 20M/g' /etc/php/7.0/apache2/php.ini
-
-# Install supervisor to allow starting mutliple processes
-RUN        mkdir -p /var/log/supervisord && \
-           mkdir -p /etc/supervisor/conf.d
-
-# Add supervisor configuration
-ADD        files/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 RUN wget http://download.gna.org/wkhtmltopdf/0.12/0.12.3/wkhtmltox-0.12.3_linux-generic-amd64.tar.xz
 RUN tar -xf wkhtmltox-0.12.3_linux-generic-amd64.tar.xz
@@ -81,10 +46,11 @@ RUN tar -xf wkhtmltox-0.12.3_linux-generic-amd64.tar.xz
 RUN mv wkhtmltox/bin/wkhtmltopdf /usr/bin/wkhtmltopdf.sh
 RUN mv wkhtmltox/bin/wkhtmltoimage /usr/bin/wkhtmltoimage.sh
 RUN rm -r wkhtmltox
+RUN rm wkhtmltox-0.12.3_linux-generic-amd64.tar.xz
 
-COPY files/bootstrap.sh /usr/local/bin/bootstrap.sh
-RUN chmod +x /usr/local/bin/bootstrap.sh
+RUN pecl install apcu-beta \
+&& echo extension=apcu.so > /usr/local/etc/php/conf.d/apcu.ini
 
-EXPOSE 80
+WORKDIR /var/www/html/claroline
 
-CMD ["/usr/bin/supervisord"]
+CMD ["apache2-foreground"]
