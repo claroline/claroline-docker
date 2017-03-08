@@ -51,6 +51,9 @@ RUN rm wkhtmltox-0.12.3_linux-generic-amd64.tar.xz
 RUN pecl install apcu-beta \
 && echo extension=apcu.so > /usr/local/etc/php/conf.d/apcu.ini
 
-WORKDIR /var/www/html/claroline
+COPY files/apache2/claroline.conf /etc/apache2/sites-available/
+RUN a2dissite 000-default && a2ensite claroline.conf
+
+WORKDIR /var/www/html
 
 CMD ["apache2-foreground"]
