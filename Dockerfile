@@ -54,6 +54,4 @@ RUN pecl install apcu-beta \
 COPY files/apache2/claroline.conf /etc/apache2/sites-available/
 RUN a2dissite 000-default && a2ensite claroline.conf
 
-WORKDIR /var/www/html/claroline
-
 CMD ["apache2-foreground"]
