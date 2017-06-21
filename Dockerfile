@@ -59,6 +59,7 @@ RUN php -r "unlink('composer-setup.php');"
 RUN mv composer.phar /usr/local/bin/composer
 # This needs to be a tag, once the repo is tagged
 # RUN git checkout 7.x
+RUN mkdir -p /var/run/mysqld && chown mysql:mysql /var/run/mysqld
 RUN /bin/bash -c "/usr/bin/mysqld_safe &" && sleep 5 && echo "create database claroline" | mysql -u root -proot
 RUN /bin/bash -c "/usr/bin/mysqld_safe &" && sleep 5 && composer sync
 RUN chmod -R 777 /var/www/html/claroline/app/cache /var/www/html/claroline/app/logs /var/www/html/claroline/app/config /var/www/html/claroline/app/sessions /var/www/html/claroline/files /var/www/html/claroline/web/uploads
